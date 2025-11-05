@@ -1,47 +1,72 @@
+import re
+
 class MiniFrame():
+
     def __init__(self, title, description):
         self.title = title
         self.description = description
         print(f"Miniframe criado na instancia: {self.title}")
-        self._routes = {}
+        self._routes = []
 
-    def route(self, path):
+    def route(self, path, methods=None):
+
+        if not methods:
+            methods = ["GET"]
+        param_names = re.findall(r"\{(\w+)\}", r"([^/]+)", path)
+
+        regex_path = re.sub(r"\{\w+\}", r"([^/]+)", path)
+        regex_pattern = f"^{regex_path}$"
+        regex_compile = re.compile(regex_pattern)
+
+        print(f"Registrando rota: {path} -> {regex_pattern}")
 
         def decorator(handler_function):
-
-            print(f"Registrando rota: {path} -> {handler_function.__name__}")
-            self._routes[path] = handler_function
+            self._routes.append(
+                (regex_compile, param_names, handler_function)
+            )
 
             return handler_function
 
         return decorator
 
     def __call__(self, environ, start_response):
-        requested_path = environ.get('PATH_INFO', '/')
-        print(f'\n__call__ rodou: Recebendo request para {requested_path}')
 
-        handler = self._routes.get(requested_path)
-        if handler:
-            print(f"Rota encontrada, executando... {handler.__name__}")
+        request = Request(environ)
+        print(f'\n__call__ rodou: Recebendo request para {request.path}')
+        response = None
 
-            body_str = handler()
-            status_code = '200 OK'
-            headers = [('Content-Type', 'text/html; charset=utf-8')]
-            start_response(status_code, headers)
+        for regex, param_names, handler_function in self._routes:
+            match = regex.match(request.path)
 
-            return [body_str.encode('utf-8')]
-        print(f"Error: rota não encontrada para {requested_path}")
-        status_code = '404 Not Found'
-        headers = [('Content-Type', 'text/html; charset=utf-8')]
-        start_response(status_code, headers)
+            if match():
+                print(f"Rota encontrada. Padrão utilizado{regex.pattern}")
 
-        body_str = f"<h1>404 Pagina Nao Encontrada</h1><p>A rota '{requested_path}' nao existe no {self.title}.</p>"
-        return [body_str.encode('utf-8')]
+                values = match.groups()
 
+                kwargs = dict(zip(param_names, values))
+
+                try:
+                    response = handler_function(request, **kwargs)
+                except Exception as e:
+                    print(f"Erro na view: {e}")
+                    response = Response(f"<h1>500 Erro Interno</h1><p>{e}</p>", status_code=500)
+                break
+
+        if response is None:
+            print(f'erro: rota "{request.path}" nao encontrada')
+            response = Response(
+                body=f"<h1>Pagina não encontrada</h1><p>a rota {request.path} não existe</p>",
+                status_code=404
+            )
+
+        print(f"Enviando resposta: {response.status_string}")
+        start_response(response.status_string, response.headers)
+        return [response.body]
+
+
+#Classes auxiliares para capturar
 class Response:
-    """
 
-    """
     def __init__(self, body, status_code=200, content_type="text/html"):
         self.body = body.encode('utf-8')
         self.status_code = status_code
@@ -53,7 +78,6 @@ class Response:
             ('Content-Lenght', str(len(self.body)))
         ]
 
-
     def _get_status_string(self, code):
         status = {
             200 : "200 OK",
@@ -61,6 +85,7 @@ class Response:
             302 : "302 Found"
         }
         return status.get(code, '200 OK')
+
 
 class Request:
     def __init__(self, environ: dict):
