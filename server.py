@@ -1,43 +1,61 @@
 from wsgiref.simple_server import make_server
-from miniframe import MiniFrame, Response
+from myuframe import MyuFrame, render_template
+from wsgi_dto import Response
 
-app = MiniFrame(title="Minha APIIII", description="CACHORRO")
+app = MyuFrame(title="Minha APIIII", description="CACHORRO")
 
 #Rotas do nosso miniframe
-@app.route("/")
+@app.route("/", methods=["GET"])
 def home(request):
-    """
-    View da Home.
-    Assinatura: (request)
-    """
-    body = f"<h1>Pagina Inicial</h1>"
-    body += f"<p>Acesse <a href='/user/123'>/user/123</a></p>"
-    body += f"<p>Ou <a href='/user/ana'>/user/ana</a></p>"
+    context = {
+        'title' : "MACACO",
+        'main_title': "Vai se foderf"
+    }
+    return render_template('home.html', context)
+
+@app.route("/user/{username}", methods=["GET"])
+def show_user(request, username):
+    contexto = {
+        'nome_do_usuario': username,
+        'caminho_da_url': request.path
+    }
+    return render_template("user_profile.html", contexto)
+
+@app.route('/login', methods=["GET"])
+def user(request):
+
+    body = """
+            <h1>Formulario de Login</h1>
+            <form action="/login" method="POST">
+                <label for="user">Usuario:</label>
+                <input type="text" id="user" name="username">
+                <br>
+                <label for="pass">Senha:</label>
+                <input type="password" id="pass" name="password">
+                <br>
+                <input type="submit" value="Entrar">
+            </form>
+        """
     return Response(body)
 
-@app.route("/sobre")
-def sobre(request):
-    """
-    View da página Sobre.
-    Assinatura: (request)
-    """
-    body = "<h1>Sobre Nos</h1><p>Este site foi feito com o MiniFrame!</p>"
-    return Response(body)
+@app.route('/login', methods=['POST'])
+def handle_login_submit(request):
 
-@app.route('/sla/{user}')
-def user(request, username):
-    """
-    View de usuário.
-    Assinatura: (request, username)
-    O 'username' vem da mágica do **kwargs no __call__!
-    """
-    body = f"<h1>Pagina do usuario: {username}</h1>"
-    body += f"<p>Voce acessou o caminho: {request.path}</p>"
-    body += f"<p>O framework extraiu <strong>'{username}'</strong> da URL para voce.</p>"
-    body += f"<a href='/'>Voltar para a Home</a>"
+    print("Executando handle_login_submit (POST)")
 
-    if username == 'adeeme':
-        body += "<h2>Voce e um ADMIN!</h2>"
+    username = request.form.get("username", "N/A")
+    password = request.form.get("password", 'N/A')
+
+    body = f"<h1>Login Recebido!</h1>"
+    body += f"<p>Ola, <strong>{username}</strong>!</p>"
+
+    if username == 'admin' and password == '123':
+        body += "<h2>Voce e um ADMIN! Login com sucesso!</h2>"
+    else:
+        body += "<h2>Usuario ou senha invalidos.</h2>"
+
+    body += f"<p>(O que recebemos: username={username}, password={password})</p>"
+    body += "<a href='/login'>Tentar novamente</a>"
 
     return Response(body)
 
@@ -45,9 +63,10 @@ def user(request, username):
 httpd = make_server('localhost', 8501, app)
 
 print(f"Servidor funcionando no http://localhost:8501/")
-print("Rotas dispponiveis")
-for path, func in app._routes.items():
-    print(f"- Caminho disponivel: {path} -> {func.__name__}()")
+print("Rotas dispponiveis:")
+
+for regex, params, methods, func in app._routes:
+    print(f"- {regex.pattern} (Params: {params}, Methods: {methods}) -> {func.__name__}")
 
 httpd.serve_forever()
 
