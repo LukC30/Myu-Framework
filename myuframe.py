@@ -13,10 +13,12 @@ def render_template(template, context):
     try:
         with open(template_path, 'r', encoding='utf-8') as f:
             html_bruto = f.read()
+
         html = html_bruto
         for k, v in context.items():
             placeholder = f"{{{{ {k} }}}}"
             html = html.replace(placeholder, str(v))
+
         return Response(body=html, content_type='text/html')
 
     except FileNotFoundError:
@@ -38,7 +40,7 @@ class MyuFrame():
         print(f"Miniframe criado na instancia: {self.title}")
         self._routes = []
 
-    #Aqui fica a cargo de escrita e adição
+    #Aqui fica a cargo de escrita e adição (as rotas serão registadas aqui dentro)
     def route(self, path, methods=None):
 
         if not methods:
@@ -54,11 +56,17 @@ class MyuFrame():
         print(f"Registrando rota: {path} -> {regex_pattern}")
 
         def decorator(handler_function):
+            """
+            de baixo para cima, aqui eu recebo uma funcao e adiciono a rota dentro do arquivo de rotas
+            """
             self._routes.append(
                 (regex_compile, param_names, methods, handler_function)
             )
+            """
+            lembrando que esse é um decorator, então retorno a funcao que eu mesmo peguei
+            """
             return handler_function
-
+        #Aqui, o decorator é retornado como uma (variavel? ponteiro que guarda o bloco de codigo?)
         return decorator
 
     #Aqui fica a cargo de consulta

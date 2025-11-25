@@ -2,6 +2,8 @@ from wsgiref.simple_server import make_server
 from myuframe import MyuFrame, render_template
 from wsgi_dto import Response
 
+import json
+
 app = MyuFrame(title="Minha APIIII", description="CACHORRO")
 
 #Rotas do nosso miniframe
@@ -9,7 +11,7 @@ app = MyuFrame(title="Minha APIIII", description="CACHORRO")
 def home(request):
     context = {
         'title' : "MACACO",
-        'main_title': "Vai se foderf"
+        'main_title': "Vamos juntos"
     }
     return render_template('home.html', context)
 
@@ -21,43 +23,38 @@ def show_user(request, username):
     }
     return render_template("user_profile.html", contexto)
 
-@app.route('/login', methods=["GET"])
-def user(request):
+@app.route('/api/user', methods=["POST"])
+def create_user(request):
+    print(f'Criando usuario')
 
-    body = """
-            <h1>Formulario de Login</h1>
-            <form action="/login" method="POST">
-                <label for="user">Usuario:</label>
-                <input type="text" id="user" name="username">
-                <br>
-                <label for="pass">Senha:</label>
-                <input type="password" id="pass" name="password">
-                <br>
-                <input type="submit" value="Entrar">
-            </form>
-        """
-    return Response(body)
-
-@app.route('/login', methods=['POST'])
-def handle_login_submit(request):
-
-    print("Executando handle_login_submit (POST)")
-
-    username = request.form.get("username", "N/A")
-    password = request.form.get("password", 'N/A')
-
-    body = f"<h1>Login Recebido!</h1>"
-    body += f"<p>Ola, <strong>{username}</strong>!</p>"
-
-    if username == 'admin' and password == '123':
-        body += "<h2>Voce e um ADMIN! Login com sucesso!</h2>"
-    else:
-        body += "<h2>Usuario ou senha invalidos.</h2>"
-
-    body += f"<p>(O que recebemos: username={username}, password={password})</p>"
-    body += "<a href='/login'>Tentar novamente</a>"
-
-    return Response(body)
+    data = request.json
+    print(request, data)
+    if not data:
+        response_data = {'error': 'Nenhum dado JSON válido foi enviado.'}
+        return Response(
+            body=json.dumps(response_data),
+            status_code=400,
+            content_type="application/json"
+        )
+    
+    login = data.get("user")
+    passw = data.get("password")
+    if not login or not passw:
+        response_data = {'error': 'Não sei onde ta caindo'}
+        return Response(
+            body=json.dumps(response_data),
+            status_code=400,
+            content_type="application/json"
+        )
+    final_data = {
+        'status' : 'success',
+        'message' : 'request recebida com sucesso',
+        'user' : {
+            'login' : login,
+            'password' : 'segredo shiiiiiii'
+        }
+    }
+    return Response(body=json.dumps(final_data, indent=2), status_code=201 ,content_type='application/json')
 
 #Criacao do server
 httpd = make_server('localhost', 8501, app)
