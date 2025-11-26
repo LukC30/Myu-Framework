@@ -10,7 +10,7 @@ app = MyuFrame(title="Minha APIIII", description="CACHORRO")
 @app.route("/", methods=["GET"])
 def home(request):
     context = {
-        'title' : "MACACO",
+        'title' : "eu sou mto macaco pprt",
         'main_title': "Vamos juntos"
     }
     return render_template('home.html', context)
