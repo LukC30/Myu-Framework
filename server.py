@@ -1,10 +1,10 @@
 from wsgiref.simple_server import make_server
-from myuframe import MyuFrame, render_template
-from wsgi_dto import Response
+from src.myuframe import MyuFrame, render_template
+from src.wsgi_dto import Response
 
 import json
 
-app = MyuFrame(title="Minha APIIII", description="CACHORRO")
+app = MyuFrame(title="Minha APIIII", description="Oi")
 
 #Rotas do nosso miniframe
 @app.route("/", methods=["GET"])

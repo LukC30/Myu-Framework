@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from wsgi_dto import Response, Request
+from src.wsgi_dto import Response, Request
 
 BASE_DIR = Path(__file__).parent
 TEMPLATE_DIR = BASE_DIR / 'template'
