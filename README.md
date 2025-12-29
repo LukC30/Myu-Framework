@@ -153,7 +153,7 @@ Distribuído sob a licença MIT. Veja `LICENSE` para mais informações.
 
 ## 📧 Contato
 
-[Seu Nome] - [@seu_twitter] - [seu_email@exemplo.com]
+[Luk] - [@Konolukdaa__] :P
 
 Link do Projeto: https://github.com/seu-usuario/Myu-Framework
 
